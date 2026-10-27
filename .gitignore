@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+
+# uv / virtualenv
+.venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Sage
+*.sage.py
+
+# Experiment output (regenerate with the scripts; commit chosen figures elsewhere)
+results/
+*.csv
+*.log
+
+# Secrets / local env
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

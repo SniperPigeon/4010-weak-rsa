@@ -1,0 +1,16 @@
+[project]
+name = "weak-rsa"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "cysignals>=1.13.1",
+    "fpylll>=0.6.4",
+    "gmpy2>=2.3.2",
+    "matplotlib>=3.11.2",
+    "sympy>=1.14.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
