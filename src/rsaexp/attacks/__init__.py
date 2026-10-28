@@ -1,1 +1,1 @@
-"""Wiener's small private exponent attack."""
+"""Attacks on weak RSA parameters, one module per attack."""
