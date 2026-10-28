@@ -14,7 +14,7 @@ from math import gcd
 
 import gmpy2
 
-from core.rsa import PrivateKey
+from rsaexp.core.rsa import PrivateKey
 
 
 def _rng(rng: random.Random | None) -> random.Random:

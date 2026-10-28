@@ -4,7 +4,7 @@ from itertools import combinations
 
 import pytest
 
-from core.keygen import generate_key, generate_key_small_d, generate_prime, leak_high_bits
+from rsaexp.core.keygen import generate_key, generate_key_small_d, generate_prime, leak_high_bits
 
 
 def test_generate_prime_has_exact_size_and_top_bits():

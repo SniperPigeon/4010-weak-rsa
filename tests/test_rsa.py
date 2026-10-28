@@ -1,6 +1,6 @@
 import pytest
 
-from core.rsa import PrivateKey, PublicKey
+from rsaexp.core.rsa import PrivateKey, PublicKey
 
 # Classic textbook example: p = 61, q = 53, phi = 3120, e = 17, d = 2753.
 P, Q, E, D = 61, 53, 17, 2753
