@@ -70,6 +70,8 @@ uv run python examples/wiener_sweep.py
 - [x] Build the RSA core and correctness tests; allow weak parameters while checking mathematical validity.
 - [x] Add reproducible experiment generators; separate attacker inputs from private ground truth.
 - [ ] short secrets, Håstad, generalized Håstad, and Wiener; share the small-root backend where needed.
+- [x] CF version Wiener
+- [ ] Hastad broadcasting, (optional generalized Hastad with different e-s, using extended CRT)
 - [ ] known-format Coppersmith and partial key exposure.
 - [ ] Run 2048-bit demos, optional padding variants, and OAEP comparisons; record correctness and runtime.
 
