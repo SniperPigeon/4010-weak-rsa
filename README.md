@@ -22,10 +22,10 @@ repeated-prime GCD attacks.
 
 ## Todo
 
-- [ ] Build the RSA core and correctness tests; allow weak parameters while checking mathematical validity.
+- [x] Build the RSA core and correctness tests; allow weak parameters while checking mathematical validity.
 - [ ] Add reproducible experiment generators; separate attacker inputs from private ground truth.
-- [ ] Teammates: short secrets, Håstad, generalized Håstad, and Wiener; share the small-root backend where needed.
-- [ ] Yukun: known-format Coppersmith and partial key exposure.
+- [ ] short secrets, Håstad, generalized Håstad, and Wiener; share the small-root backend where needed.
+- [ ] known-format Coppersmith and partial key exposure.
 - [ ] Run 2048-bit demos, optional padding variants, and OAEP comparisons; record correctness and runtime.
 
 Reuse `gmpy2`, `sympy`, and `fpylll`; use SageMath for reference checks.
