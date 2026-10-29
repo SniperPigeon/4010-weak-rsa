@@ -22,8 +22,8 @@ if __name__ == "__main__":
         print("No solution")
 
     beta = 0.49
-    for leaked in (800, 700, 600, 580, 560, 530, 512, 510):
-        for m_dim in (4,6,10,13):
+    for leaked in (560, 530, 512, 510):
+        for m_dim in (4,6,10,13,25):
             '''
             To recover unknown bits from lattice constructions, we should satisfy det(bf) < M / sqrt(d+1)
             where we have
@@ -40,6 +40,7 @@ if __name__ == "__main__":
                 seed=0,
                 check=check,
                 timeout=30,
+                workers=5
             )
-            print(f"leaked_bits={leaked} with beta={beta}: {campaign}")
+            print(f"leaked_bits={leaked} with beta={beta}, lattice dimension= {m_dim}, epsilon={epsilon:.2f}: {campaign}")
         

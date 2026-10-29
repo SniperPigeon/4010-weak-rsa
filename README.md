@@ -39,10 +39,17 @@ def check(guess, truth) -> bool                # optional; run_campaign defaults
   size of `d` are keyword arguments with defaults, swept with `functools.partial`.
 - `truth` is the private data the guess is scored against; it never reaches
   the attack.
-- With `timeout`, attacks run in a spawned worker process, so keep these
-  functions at module level and their inputs and outputs picklable. Modules
-  that import Sage take about 2 s to load in each worker; this is not counted
-  against the timeout.
+- With `timeout` or `workers > 1`, attacks run in spawned worker processes,
+  so the attack must be a module-level function (or a `functools.partial` of
+  one) and challenges and guesses must be picklable; `make_challenge` and
+  `check` always run in the main process. A trial that overruns `timeout` has
+  its process killed and replaced, and a crashed process counts as `error`.
+  Modules that import Sage take about 2 s to load in each worker; this is not
+  counted against the timeout.
+- `workers=k` runs k trials at once with the same per-trial outcomes as a
+  serial run. LLL is single-threaded, so keep k at most the number of
+  performance cores when comparing runtimes; beyond that, slower cores
+  inflate attack times and can cause extra timeouts.
 
 ```python
 from functools import partial
