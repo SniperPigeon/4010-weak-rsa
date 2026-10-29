@@ -46,6 +46,11 @@ def die(challenge):
     os._exit(3)
 
 
+def sleep_one_second(challenge):
+    time.sleep(1)
+    return challenge
+
+
 def test_inline_success():
     campaign = run_campaign(short_secret_challenge, cube_root, 5, seed=1)
     assert campaign.rate(Outcome.SUCCESS) == 1.0
@@ -103,7 +108,47 @@ def test_isolated_success_matches_inline():
     assert [t.outcome for t in isolated.trials] == [t.outcome for t in inline.trials]
 
 
-@pytest.mark.parametrize("kwargs", [{"n_trials": 0}, {"n_trials": 1, "timeout": 0}])
+def test_parallel_matches_serial():
+    serial = run_campaign(short_secret_challenge, cube_root, 8, seed=4)
+    parallel = run_campaign(short_secret_challenge, cube_root, 8, seed=4, workers=3)
+    assert parallel.workers == 3
+    assert [(t.index, t.seed, t.outcome) for t in parallel.trials] == [
+        (t.index, t.seed, t.outcome) for t in serial.trials
+    ]
+    assert "3 workers" in str(parallel)
+
+
+def test_parallel_timeout_only_kills_the_slow_trial():
+    campaign = run_campaign(coin_challenge, hang_on_one, 8, seed=3, timeout=1, workers=3)
+    bits = [coin_challenge(random.Random(t.seed))[0] for t in campaign.trials]
+    assert 0 < sum(bits) < 8
+    expected = [Outcome.TIMEOUT if bit else Outcome.SUCCESS for bit in bits]
+    assert [t.outcome for t in campaign.trials] == expected
+
+
+def test_parallel_recovers_from_crashes():
+    crashed = run_campaign(short_secret_challenge, die, 4, timeout=5, workers=2)
+    assert crashed.count(Outcome.ERROR) == 4
+    assert all("exit code 3" in t.error for t in crashed.trials)
+
+
+def test_workers_run_concurrently():
+    start = time.perf_counter()
+    campaign = run_campaign(coin_challenge, sleep_one_second, 4, workers=4)
+    assert campaign.rate(Outcome.SUCCESS) == 1.0
+    assert time.perf_counter() - start < 3.5  # four one-second trials run side by side
+
+
+def test_workers_capped_at_trial_count():
+    campaign = run_campaign(short_secret_challenge, cube_root, 2, workers=5)
+    assert campaign.workers == 2
+    assert campaign.rate(Outcome.SUCCESS) == 1.0
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [{"n_trials": 0}, {"n_trials": 1, "timeout": 0}, {"n_trials": 1, "workers": 0}],
+)
 def test_rejects_bad_arguments(kwargs):
     with pytest.raises(ValueError):
         run_campaign(short_secret_challenge, cube_root, **kwargs)
