@@ -38,6 +38,8 @@ def wiener_cf(pub: PublicKey) -> PrivateKey | None:
     return None
 
 
+
+
 def make_challenge(rng: random.Random, d_bits: int = 500, bits: int = 2048) -> tuple[PublicKey, PrivateKey]:
     """A key with a ``d_bits``-bit d: the attacker gets (N, e), the truth is the key."""
     key = generate_key_small_d(d_bits, bits, rng)
