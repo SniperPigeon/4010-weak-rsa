@@ -5,6 +5,7 @@ from typing import NamedTuple
 from sage.all import Integer, continued_fraction, PolynomialRing, Zmod, inverse_mod, power_mod
 from rsaexp.core.keygen import generate_key,HighBitsLeak,leak_high_bits,StereotypedMsg,obtain_stereotype
 from rsaexp.core.rsa import PrivateKey, PublicKey
+from rsaexp.attacks.coppersmith import small_roots
 
 class PExposureChallenge(NamedTuple):
     pub: PublicKey
@@ -18,11 +19,11 @@ def factor_with_high_p(challenge: PExposureChallenge,beta:float,epsilon:float) -
     highp = Integer(leak.approx)
     unknown = Integer(leak.unknown_bits)
     n = Integer(pub.n)
-    ring = PolynomialRing(Zmod(n),"x",implementation="NTL")
+    ring = PolynomialRing(Zmod(n),"x")
     x = ring.gen()
     f = leak.approx + x
     
-    for x0 in f.small_roots(X=leak.bound, beta=beta, epsilon=epsilon):
+    for x0 in small_roots(f, X=leak.bound, beta=beta, epsilon=epsilon):
         p = Integer(f(x0))                  # convert to int
         if 1 < p < n and n % p == 0:
             return PrivateKey.from_primes(int(p), int(n // p), pub.e)
@@ -56,12 +57,12 @@ def steorotyped_recover(challenge: StereotypeChallenge, beta:float) -> int | Non
     unknown_bits = Integer(challenge.leak.unknown_bits)
     c = Integer(challenge.cipher)
     n = Integer(pub.n)
-    ring = PolynomialRing(Zmod(n),"x",implementation="NTL")
+    ring = PolynomialRing(Zmod(n),"x")
     x = ring.gen()
     
     f = (known + x) ** e - c # solution is the lower part of message.
     f = f.monic()
-    roots = f.small_roots(2**unknown_bits,beta=beta)
+    roots = small_roots(f, X=2**unknown_bits, beta=beta)
     if roots:
         full_root = int(known + roots[0])
         if power_mod(full_root,n=e,m=n) == int(c): # pass root test
