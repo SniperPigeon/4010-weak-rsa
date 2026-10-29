@@ -36,6 +36,14 @@ if __name__ == "__main__":
             5   409
             7   292
             17  120
+            
+            However we obtained several actual limit, without adjusting epsilon for LLL
+            e   tested  default m   dim     bound for (m-1)/(em-1) *2048
+            3   516/512     3       9           512
+            5   230         2       10          228
+            7   164         2       14          158
+            
+            Thus we need to adjust epsilon, go with LLL with higher dimensions before proceeding to bigger e.
             '''
             #epsilon = beta**2 / (m_dim-0.5)
             campaign = run_campaign(
