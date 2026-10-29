@@ -97,3 +97,26 @@ def leak_high_bits(p: int, known_bits: int) -> HighBitsLeak:
         raise ValueError("known_bits must be in (0, p.bit_length()]")
     unknown_bits = p.bit_length() - known_bits
     return HighBitsLeak(p >> unknown_bits, known_bits, unknown_bits)
+
+@dataclass(frozen=True)
+class StereotypedMsg:
+    """Known top bits of message m, obtain full m with ciper c"""
+
+    msg_high: int
+    known_bits: int
+    unknown_bits: int
+
+    @property
+    def approx(self) -> int:
+        return self.msg_high << self.unknown_bits
+
+    @property
+    def bound(self) -> int:
+        return 1 << self.unknown_bits
+
+
+def obtain_stereotype(m:int, known_bits: int) -> StereotypedMsg:
+    if not 0 < known_bits <= m.bit_length():
+        raise ValueError("known_bits must be in (0, p.bit_length()]")
+    unknown_bits = m.bit_length() - known_bits
+    return StereotypedMsg(m >> unknown_bits, known_bits, unknown_bits)

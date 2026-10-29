@@ -1,6 +1,5 @@
-"""Wiener's attack on 2048-bit keys as d grows past the N^(1/4) / 3 bound (~510 bits).
-
-Run from the repository root: uv run python examples/wiener_sweep.py
+"""
+Run from the repository root: uv run python examples/PKE.py
 """
 
 import random
@@ -8,7 +7,7 @@ from functools import partial
 
 from rsaexp.attacks.partial import *
 from rsaexp.core.experiment import run_campaign
-from rsaexp.core.keygen import HighBitsLeak
+from rsaexp.core.keygen import HighBitsLeak,StereotypedMsg
 
 if __name__ == "__main__":
     # One 128 bit unknown simple trial

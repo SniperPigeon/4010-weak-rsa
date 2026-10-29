@@ -79,7 +79,8 @@ uv run python examples/wiener_sweep.py
 - [ ] short secrets, Håstad, generalized Håstad, and Wiener; share the small-root backend where needed.
 - [x] CF version Wiener
 - [ ] Hastad broadcasting, (optional generalized Hastad with different e-s, using extended CRT)
-- [ ] known-format Coppersmith and partial key exposure.
+- [ ] known-format Coppersmith
+- [x] Partial Exposure of p
 - [ ] Run 2048-bit demos, optional padding variants, and OAEP comparisons; record correctness and runtime.
 
 Reuse `gmpy2`, `sympy`, `fpylll`, and SageMath; attacks may use Sage directly
