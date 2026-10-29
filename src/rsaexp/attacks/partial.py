@@ -49,8 +49,8 @@ class StereotypeChallenge(NamedTuple):
     leak: StereotypedMsg
     cipher: int
 
-def steorotyped_recover(challenge: StereotypeChallenge, beta:float) -> int | None: # return recovered message
-    
+def steorotyped_recover(challenge: StereotypeChallenge, beta:float, epsilon:float|None=None) -> int | None: # return recovered message
+
     pub = challenge.pub
     e = Integer(pub.e)
     known = Integer(challenge.leak.approx)
@@ -59,10 +59,10 @@ def steorotyped_recover(challenge: StereotypeChallenge, beta:float) -> int | Non
     n = Integer(pub.n)
     ring = PolynomialRing(Zmod(n),"x")
     x = ring.gen()
-    
+
     f = (known + x) ** e - c # solution is the lower part of message.
     f = f.monic()
-    roots = small_roots(f, X=2**unknown_bits, beta=beta)
+    roots = small_roots(f, X=2**unknown_bits, beta=beta, epsilon=epsilon)
     if roots:
         full_root = int(known + roots[0])
         if power_mod(full_root,n=e,m=n) == int(c): # pass root test
@@ -73,7 +73,7 @@ def steorotyped_recover(challenge: StereotypeChallenge, beta:float) -> int | Non
         return None
 
 
-def make_steorotype_challenge(rng: random.Random, e: int = 3, unknown_bits: int = 60, bits: int = 2048, msg_bits: int = 512) -> tuple[ StereotypeChallenge, int]:
+def make_steorotype_challenge(rng: random.Random, e: int = 3, unknown_bits: int = 60, bits: int = 2048, msg_bits: int = 1024) -> tuple[ StereotypeChallenge, int]:
     """A key with a ``d_bits``-bit d: the attacker gets (N, e), the truth is the key."""
     key = generate_key(e=e,bits=bits, rng=rng)
     pub = key.public_key

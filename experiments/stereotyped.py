@@ -5,10 +5,19 @@ Run from the repository root: uv run python examples/wiener_sweep.py
 
 import random
 from functools import partial
+from math import ceil
 
 from rsaexp.attacks.partial import *
 from rsaexp.core.experiment import run_campaign
 from rsaexp.core.keygen import StereotypedMsg
+
+
+def min_m(e, unknown_bits):
+    # smallest m whose bound (m-1)/(e*m-1)*2048 reaches unknown_bits; None past N^(1/e)
+    if e * unknown_bits >= 2048:
+        return None
+    return max(ceil(7 / e), ceil((2048 - unknown_bits) / (2048 - e * unknown_bits)))
+
 
 if __name__ == "__main__":
     # One 128 bit unknown simple trial
@@ -22,9 +31,9 @@ if __name__ == "__main__":
     beta = 1
     e = 3
     grid = [
-        (3, [128, 256,384, 480, 500, 504, 506, 510, 512, 516, 520, 530, 670,]),
-        (5, [128,196,202, 210, 218, 224, 230, 236, 242, 256, 312,]),
-        (7, [96, 156, 160, 164, 172, 176, 180]),
+        (3, [128, 384, 512, 560, 600, 630]),
+        (5, [128, 228, 290, 320, 340]),
+        (7, [96, 158, 205, 230]),
     ]
     for line in grid:
         e = line[0]
@@ -45,16 +54,22 @@ if __name__ == "__main__":
             
             Thus we need to adjust epsilon, go with LLL with higher dimensions before proceeding to bigger e.
             '''
-            #epsilon = beta**2 / (m_dim-0.5)
-            campaign = run_campaign(
-                partial(make_steorotype_challenge, e=e,unknown_bits=unknown_bits,msg_bits=1024),
-                partial(steorotyped_recover, beta=beta,),
-                50,
-                seed=114514,
-                check=check_sterotype,
-                timeout=30,
-                workers=10
-            )
-            # print(f"leaked_bits={leaked} with beta={beta}, lattice dimension= {m_dim}, epsilon={epsilon:.2f}: {campaign}")
-            print(f"unknown_bits:{unknown_bits}, public key e = {e} : {campaign}")
+            m0 = min_m(e, unknown_bits)
+            if m0 is None:  # past N^(1/e), no lattice reaches it
+                print(f"unknown_bits:{unknown_bits}, public key e = {e} : beyond N^(1/e), skipped")
+                continue
+            # only sweep m around the one that first works, so small unknowns skip big lattices
+            for m_dim in range(max(ceil(7 / e), m0 - 1), m0 + 2):
+                epsilon = beta**2 / (e * m_dim)
+                campaign = run_campaign(
+                    partial(make_steorotype_challenge, e=e,unknown_bits=unknown_bits,msg_bits=1024),
+                    partial(steorotyped_recover, beta=beta, epsilon=epsilon),
+                    50,
+                    seed=114514,
+                    check=check_sterotype,
+                    timeout=30,
+                    workers=10
+                )
+                worst = round((m_dim - 1) / (e * m_dim - 1) * 2048)
+                print(f"unknown_bits:{unknown_bits}, e={e}, m={m_dim}, dim={e*m_dim} (bound {worst}): {campaign}")
         
