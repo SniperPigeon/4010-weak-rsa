@@ -1,6 +1,5 @@
 import random
 
-from rsaexp.attacks.nt import int_to_text, text_to_int
 from rsaexp.attacks.short_secret import (
     ShortSecretChallenge,
     check,
@@ -24,11 +23,11 @@ def test_textbook_hand_example():
 
 def test_recovers_pay_alice_on_2048():
     key = generate_key(e=3, rng=random.Random(0))
-    m = text_to_int("Pay Alice 100")
+    m = int.from_bytes(b"Pay Alice 100", "big")
     c = key.public_key.encrypt(m)
     guess = short_secret(ShortSecretChallenge(key.public_key, c))
     assert guess == m
-    assert int_to_text(guess) == "Pay Alice 100"
+    assert guess.to_bytes(13, "big") == b"Pay Alice 100"
 
 
 def test_recovers_generated_short_message():

@@ -13,7 +13,8 @@ from __future__ import annotations
 import random
 from typing import NamedTuple
 
-from rsaexp.attacks.nt import integer_nth_root
+import gmpy2
+
 from rsaexp.core.keygen import generate_key
 from rsaexp.core.rsa import PublicKey
 
@@ -25,7 +26,8 @@ class ShortSecretChallenge(NamedTuple):
 
 def short_secret(challenge: ShortSecretChallenge) -> int | None:
     """Return m if c is an exact e-th power; None if the message wrapped modulo N."""
-    root, exact = integer_nth_root(challenge.ciphertext, challenge.pub.e)
+    root, exact = gmpy2.iroot(challenge.ciphertext, challenge.pub.e)
+    root = int(root)
     if exact and 0 <= root < challenge.pub.n and challenge.pub.encrypt(root) == challenge.ciphertext:
         return root
     return None

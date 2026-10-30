@@ -4,12 +4,20 @@ Linear padding is a public format, the same for every encryption, so
 Håstad still recovers the padded integer and then unpads. Random
 padding (and OAEP) uses a fresh seed each time, so the broadcast
 equations are no longer about one common message.
+
+OAEP is RSAES-OAEP with SHA-256 from pycryptodome; ``rng`` supplies the
+seed so a trial stays reproducible.
 """
 
 from __future__ import annotations
 
-import hashlib
 import random
+
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
+
+from rsaexp.core.rsa import PrivateKey, PublicKey
 
 
 def linear_pad(m: int, a: int = 256, b: int = 17) -> int:
@@ -37,56 +45,14 @@ def random_unpad(padded: int, msg_bits: int) -> int:
     return padded & ((1 << msg_bits) - 1)
 
 
-def _xor(a: bytes, b: bytes) -> bytes:
-    return bytes(x ^ y for x, y in zip(a, b, strict=True))
+def oaep_encrypt(pub: PublicKey, message: bytes, rng: random.Random) -> int:
+    """RSAES-OAEP (SHA-256) ciphertext of ``message`` as an integer."""
+    cipher = PKCS1_OAEP.new(RSA.construct((pub.n, pub.e)), hashAlgo=SHA256, randfunc=rng.randbytes)
+    return int.from_bytes(cipher.encrypt(message), "big")
 
 
-def mgf1(seed: bytes, length: int) -> bytes:
-    """PKCS#1 MGF1 with SHA-256."""
-    hlen = hashlib.sha256().digest_size
-    out = bytearray()
-    for counter in range((length + hlen - 1) // hlen):
-        out.extend(hashlib.sha256(seed + counter.to_bytes(4, "big")).digest())
-    return bytes(out[:length])
-
-
-def oaep_encode(message: bytes, k: int, rng: random.Random, label: bytes = b"") -> int:
-    """RSAES-OAEP encode to an integer < 256^(k-1). ``k`` is the byte length of N."""
-    hlen = 32
-    if k < 2 * hlen + 2:
-        raise ValueError("modulus too short for OAEP")
-    if len(message) > k - 2 * hlen - 2:
-        raise ValueError("message too long for this modulus")
-    lhash = hashlib.sha256(label).digest()
-    ps = b"\x00" * (k - len(message) - 2 * hlen - 2)
-    db = lhash + ps + b"\x01" + message
-    seed = rng.getrandbits(hlen * 8).to_bytes(hlen, "big")
-    masked_db = _xor(db, mgf1(seed, k - hlen - 1))
-    masked_seed = _xor(seed, mgf1(masked_db, hlen))
-    return int.from_bytes(b"\x00" + masked_seed + masked_db, "big")
-
-
-def oaep_decode(em: int, k: int, label: bytes = b"") -> bytes:
-    """Inverse of ``oaep_encode``. Raises ValueError on a malformed encoding."""
-    hlen = 32
-    data = em.to_bytes(k, "big")
-    if data[0] != 0:
-        raise ValueError("OAEP decode failed")
-    masked_seed, masked_db = data[1 : 1 + hlen], data[1 + hlen :]
-    seed = _xor(masked_seed, mgf1(masked_db, hlen))
-    db = _xor(masked_db, mgf1(seed, k - hlen - 1))
-    lhash = hashlib.sha256(label).digest()
-    if db[:hlen] != lhash:
-        raise ValueError("OAEP decode failed")
-    rest = db[hlen:]
-    try:
-        sep = rest.index(1)
-    except ValueError as exc:
-        raise ValueError("OAEP decode failed") from exc
-    if any(rest[:sep]):
-        raise ValueError("OAEP decode failed")
-    return rest[sep + 1 :]
-
-
-def modulus_bytes(n: int) -> int:
-    return (n.bit_length() + 7) // 8
+def oaep_decrypt(key: PrivateKey, c: int) -> bytes:
+    """Inverse of ``oaep_encrypt``. Raises ValueError on a malformed ciphertext."""
+    rsa_key = RSA.construct((key.n, key.e, key.d, key.p, key.q))
+    k = (key.n.bit_length() + 7) // 8
+    return PKCS1_OAEP.new(rsa_key, hashAlgo=SHA256).decrypt(c.to_bytes(k, "big"))

@@ -83,6 +83,6 @@ uv run python examples/wiener_sweep.py
 - [x] Partial Exposure of p
 - [ ] Run 2048-bit demos, optional padding variants, and OAEP comparisons; record correctness and runtime.
 
-Reuse `gmpy2`, `sympy`, `fpylll`, and SageMath; attacks may use Sage directly
+Reuse `gmpy2`, `sympy`, `fpylll`, `pycryptodome` (OAEP), and SageMath; attacks may use Sage directly
 (continued fractions, lattices).
 Review algorithm changes before implementation.

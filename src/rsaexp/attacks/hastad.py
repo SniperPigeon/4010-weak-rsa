@@ -4,6 +4,11 @@ c_i ≡ m^e (mod n_i). If the n_i are pairwise coprime and there are at
 least e of them, CRT rebuilds m^e exactly (when m^e is below the
 product of the n_i) and an integer e-th root returns m.
 
+The message must be long enough that m^e wraps every n_i; otherwise a
+single c_i is already m^e over the integers and the short-secret attack
+needs no broadcast. For e = 3 and 2048-bit moduli that means m above
+about 683 bits, hence the 1500-bit default.
+
 Linear padding uses the same a, b for every recipient, so CRT still
 recovers a*m + b. Fresh random padding or OAEP makes each c_i encrypt
 a different integer; the same CRT-and-root then fails.
@@ -15,14 +20,10 @@ import random
 from math import gcd
 from typing import NamedTuple
 
-from rsaexp.attacks.nt import crt, integer_nth_root
-from rsaexp.attacks.padding import (
-    linear_pad,
-    linear_unpad,
-    modulus_bytes,
-    oaep_encode,
-    random_pad,
-)
+import gmpy2
+from sympy.ntheory.modular import crt
+
+from rsaexp.attacks.padding import linear_pad, linear_unpad, oaep_encrypt, random_pad
 from rsaexp.core.keygen import generate_key
 from rsaexp.core.rsa import PrivateKey
 
@@ -56,13 +57,11 @@ def hastad_broadcast(challenge: HastadChallenge) -> int | None:
         for nj in challenge.moduli[i + 1 :]:
             if gcd(ni, nj) != 1:
                 return None
-    combined, _ = crt(challenge.ciphertexts, challenge.moduli)
-    root, exact = integer_nth_root(combined, e)
+    combined, _ = crt(challenge.moduli, challenge.ciphertexts, check=False)
+    root, exact = gmpy2.iroot(int(combined), e)
     if not exact:
         return None
-    if challenge.a == 1 and challenge.b == 0:
-        return root
-    return linear_unpad(root, challenge.a, challenge.b)
+    return linear_unpad(int(root), challenge.a, challenge.b)
 
 
 def _coprime_keys(rng: random.Random, e: int, bits: int, count: int) -> list[PrivateKey]:
@@ -79,7 +78,7 @@ def make_challenge(
     e: int = 3,
     bits: int = 2048,
     recipients: int | None = None,
-    msg_bits: int = 80,
+    msg_bits: int = 1500,
     padding: str = PADDING_NONE,
     pad_bits: int = 128,
     a: int = 256,
@@ -96,28 +95,22 @@ def make_challenge(
     keys = _coprime_keys(rng, e, bits, recipients)
     m = rng.getrandbits(msg_bits) | (1 << (msg_bits - 1))
 
-    if padding == PADDING_NONE:
-        plains = [m] * recipients
-        a_pub, b_pub = 1, 0
-    elif padding == PADDING_LINEAR:
-        padded = linear_pad(m, a, b)
-        plains = [padded] * recipients
-        a_pub, b_pub = a, b
-    elif padding == PADDING_RANDOM:
-        plains = [random_pad(m, msg_bits, pad_bits, rng) for _ in range(recipients)]
-        a_pub, b_pub = 1, 0
+    a_pub, b_pub = 1, 0
+    if padding == PADDING_OAEP:
+        raw = m.to_bytes((msg_bits + 7) // 8, "big")
+        ciphertexts = tuple(oaep_encrypt(key.public_key, raw, rng) for key in keys)
     else:
-        plains = [
-            oaep_encode(m.to_bytes((msg_bits + 7) // 8, "big"), modulus_bytes(key.n), rng)
-            for key in keys
-        ]
-        a_pub, b_pub = 1, 0
-
-    for plain, key in zip(plains, keys):
-        if not 0 <= plain < key.n:
-            raise ValueError("padded message is not in [0, N)")
-
-    ciphertexts = tuple(key.public_key.encrypt(plain) for plain, key in zip(plains, keys))
+        if padding == PADDING_NONE:
+            plains = [m] * recipients
+        elif padding == PADDING_LINEAR:
+            plains = [linear_pad(m, a, b)] * recipients
+            a_pub, b_pub = a, b
+        else:
+            plains = [random_pad(m, msg_bits, pad_bits, rng) for _ in range(recipients)]
+        for plain, key in zip(plains, keys):
+            if not 0 <= plain < key.n:
+                raise ValueError("padded message is not in [0, N)")
+        ciphertexts = tuple(key.public_key.encrypt(plain) for plain, key in zip(plains, keys))
     moduli = tuple(key.n for key in keys)
     return HastadChallenge(e, ciphertexts, moduli, a_pub, b_pub), m
 
