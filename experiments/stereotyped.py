@@ -1,6 +1,6 @@
-"""Wiener's attack on 2048-bit keys as d grows past the N^(1/4) / 3 bound (~510 bits).
+"""Stereotyped-message Coppersmith on 2048-bit keys: sweep unknown low bits and lattice parameter m for e = 3, 5, 7.
 
-Run from the repository root: uv run python examples/wiener_sweep.py
+Run from the repository root: uv run python experiments/stereotyped.py
 """
 
 import random

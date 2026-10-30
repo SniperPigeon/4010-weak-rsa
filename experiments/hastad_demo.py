@@ -1,6 +1,6 @@
 """Håstad e=3 broadcast vs padding, 2048-bit moduli.
 
-Run from the repository root: uv run python examples/hastad_demo.py
+Run from the repository root: uv run python experiments/hastad_demo.py
 """
 
 from functools import partial

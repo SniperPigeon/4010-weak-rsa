@@ -2,7 +2,7 @@
 
 Run from the repository root:
 
-    uv run python examples/panshul_demo.py
+    uv run python experiments/panshul_demo.py
 """
 
 import random

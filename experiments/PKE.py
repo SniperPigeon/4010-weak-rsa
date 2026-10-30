@@ -1,5 +1,5 @@
 """
-Run from the repository root: uv run python examples/PKE.py
+Run from the repository root: uv run python experiments/PKE.py
 """
 
 import random
